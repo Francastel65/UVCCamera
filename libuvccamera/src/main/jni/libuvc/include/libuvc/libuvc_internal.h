@@ -13,6 +13,8 @@
 #include <signal.h>
 #include "utilbase.h"
 #include "utlist.h"
+//#include "libuvc/include/utilbase.h"
+//#include "libuvc/include/utlist.h"
 
 //#define UVC_DEBUGGING
 
@@ -188,6 +190,17 @@ enum uvc_status_type {
 #define UVC_CONTROL_CAP_AUTOUPDATE (1 << 3)
 #define UVC_CONTROL_CAP_ASYNCHRONOUS (1 << 4)
 
+/** Added 2022 by Peter Stoiber
+ * Here the values were stored, which the UVC library uses to perform the stream
+ */
+struct auto_detect_struct;
+typedef struct {
+    size_t maxPacketSize;
+    size_t altsetting;
+    size_t packetsPerRequest;
+    size_t activeUrbs;
+} auto_detect_struct_t;
+
 struct uvc_streaming_interface;
 struct uvc_device_info;
 
@@ -281,6 +294,11 @@ struct uvc_stream_handle {
   uint8_t *transfer_bufs[LIBUVC_NUM_TRANSFER_BUFS];
   struct uvc_frame frame;
   enum uvc_frame_format frame_format;
+  // added by Peter St.
+  uint8_t random;                             // if true, random values are used.
+  uint8_t activeUrbs;                         // Value of the Active Urbs
+  struct libusb_transfer **transfers_random;  // random array for the active Urbs
+  uint8_t **transfer_bufs_random;             // random array for the transfer buffers
 };
 
 /** Handle on an open UVC device

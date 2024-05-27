@@ -6,12 +6,47 @@ extern "C" {
 #endif
 
 #include <stdio.h> // FILE
-#include <libusb/libusb.h>
-#include <libuvc/libuvc_config.h>
+
+#include "../../../libusb/libusb/libusb.h"
+//#include <libusb.h>
+//#include <libuvc/include/libuvc/libuvc_config.h>
+
+#include "libuvc_config.h"
+#include <android/log.h>
+
+
+#define  LOG_TAGS    "from_LibUVC"
+
+#define  LOGWAR(...)  __android_log_print(ANDROID_LOG_WARNING, LOG_TAGS, __VA_ARGS__)  // added Peter Stoiber
+#define  LOGDEB(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAGS, __VA_ARGS__)  // added Peter Stoiber
+#define  LOGERR(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAGS, __VA_ARGS__)  // added Peter Stoiber
 
 /** UVC error types, based on libusb errors
  * @ingroup diag
  */
+
+static int LIBUVC_NUM_TRANSFER_ACTIVE_URBS = 8;
+
+struct custom_camera_values;
+/** Custom Camera Values
+ *
+ */
+typedef struct custom_camera_values {
+    int packetsPerRequest;
+    int maxPacketSize;
+    int activeUrbs;
+    int camStreamingAltSetting;
+    int camFormatIndex;
+    int camFrameIndex;
+    int camFrameInterval;
+    int bmHint;
+    int imageWidth;
+    int imageHeight;
+    int camStreamingEndpoint;
+    int camStreamingInterfaceNum;
+    const char* frameFormat;
+} custom_camera_values_t;
+
 typedef enum uvc_error {
 	/** Success (no error) */
 	UVC_SUCCESS = 0,
@@ -92,8 +127,9 @@ enum uvc_frame_format {
 	/** YUYV/YUV2/YUV422: YUV encoding with one luminance value per pixel and
 	 * one UV (chrominance) pair for every two pixels.
 	 */
-	UVC_FRAME_FORMAT_YUYV,
+	UVC_FRAME_FORMAT_YUYV,      // Added 9.4.2022 by Peter Stoiber
 	UVC_FRAME_FORMAT_UYVY,
+	UVC_FRAME_FORMAT_NV21,
 	/** 16-bits RGB */
 	UVC_FRAME_FORMAT_RGB565,	// RGB565
 	/** 24-bit RGB */
@@ -107,6 +143,7 @@ enum uvc_frame_format {
 	UVC_FRAME_FORMAT_BY8,
 	/** Number of formats understood */
 	UVC_FRAME_FORMAT_COUNT,
+    UVC_FRAME_FORMAT_YUY2
 };
 
 /* UVC_COLOR_FORMAT_* have been replaced with UVC_FRAME_FORMAT_*. Please use
@@ -521,8 +558,14 @@ typedef struct uvc_stream_ctrl {
 	uint8_t bInterfaceNumber;
 } uvc_stream_ctrl_t;
 
+uint8_t _uvc_frame_format_matches_guid(enum uvc_frame_format fmt,
+                                       uint8_t guid[16]);
+
+uvc_error_t control_TransferUVC(uvc_stream_ctrl_t *ctrl, uvc_device_handle_t *deviceHandle);
+uvc_error_t uvc_query_stream_ctrl(uvc_device_handle_t *devh,
+                                  uvc_stream_ctrl_t *ctrl, uint8_t probe, enum uvc_req_code req);
 uvc_error_t uvc_init(uvc_context_t **ctx, struct libusb_context *usb_ctx);
-uvc_error_t uvc_init2(uvc_context_t **ctx, struct libusb_context *usb_ctx, const char *usbfs);
+uvc_error_t uvc_init2(uvc_context_t **ctx, struct libusb_context *usb_ctx);
 void uvc_exit(uvc_context_t *ctx);
 
 uvc_error_t uvc_get_device_list(uvc_context_t *ctx, uvc_device_t ***list);
@@ -542,9 +585,9 @@ uvc_error_t uvc_find_device2(uvc_context_t *ctx, uvc_device_t **dev, int vid,
 		int pid, const char *sn, int fd);
 // XXX
 uvc_error_t uvc_get_device_with_fd(uvc_context_t *ctx, uvc_device_t **device,
-		int vid, int pid, const char *serial, int fd, int busnum, int devaddr);
+								   uvc_device_handle_t **devh , int fd);
 
-uvc_error_t uvc_open(uvc_device_t *dev, uvc_device_handle_t **devh);
+uvc_error_t uvc_open(uvc_device_t *dev, uvc_device_handle_t *uvc_handle);
 void uvc_close(uvc_device_handle_t *devh);
 // XXX
 uvc_error_t uvc_set_reset_altsetting(uvc_device_handle_t *devh, uint8_t reset_on_release_if);
@@ -586,7 +629,7 @@ uvc_error_t uvc_start_streaming(uvc_device_handle_t *devh,
 uvc_error_t uvc_start_streaming_bandwidth(uvc_device_handle_t *devh,
 		uvc_stream_ctrl_t *ctrl, uvc_frame_callback_t *cb, void *user_ptr,
 		float bandwidth,
-		uint8_t flags);	// XXX added saki
+		uint8_t flags, custom_camera_values_t *values);	// XXX added saki // modified by Peter-St
 
 uvc_error_t uvc_start_iso_streaming(uvc_device_handle_t *devh,
 		uvc_stream_ctrl_t *ctrl, uvc_frame_callback_t *cb, void *user_ptr);
@@ -594,13 +637,17 @@ uvc_error_t uvc_start_iso_streaming(uvc_device_handle_t *devh,
 void uvc_stop_streaming(uvc_device_handle_t *devh);
 
 uvc_error_t uvc_stream_open_ctrl(uvc_device_handle_t *devh,
-		uvc_stream_handle_t **strmh, uvc_stream_ctrl_t *ctrl);
+		uvc_stream_handle_t **strmh, uvc_stream_ctrl_t *ctrl, size_t stream_size);
 uvc_error_t uvc_stream_ctrl(uvc_stream_handle_t *strmh,
 		uvc_stream_ctrl_t *ctrl);
 uvc_error_t uvc_stream_start(uvc_stream_handle_t *strmh,
 		uvc_frame_callback_t *cb, void *user_ptr, uint8_t flags);
+uvc_error_t uvc_stream_start_random(uvc_stream_handle_t *strmh, uvc_frame_callback_t *cb, void *user_ptr, float bandwidth_factor, uint8_t flags,
+									int activeUrbs, int packetsPerRequest, int altset, int maxPacketSize);  // XXX added Peter Stoiber
+uvc_error_t uvc_stream_start_automatic_detection(uvc_stream_handle_t *strmh,
+uvc_frame_callback_t *cb, void *user_ptr, float bandwidth, uint8_t flags);	// XXX added Peter Stoiber
 uvc_error_t uvc_stream_start_bandwidth(uvc_stream_handle_t *strmh,
-		uvc_frame_callback_t *cb, void *user_ptr, float bandwidth, uint8_t flags);	// XXX added saki
+		uvc_frame_callback_t *cb, void *user_ptr, float bandwidth, uint8_t flags, custom_camera_values_t *values);	// XXX added saki // Commited by Peter-St
 uvc_error_t uvc_stream_start_iso(uvc_stream_handle_t *strmh,
 		uvc_frame_callback_t *cb, void *user_ptr);
 uvc_error_t uvc_stream_get_frame(uvc_stream_handle_t *strmh,
@@ -801,6 +848,8 @@ uvc_error_t uvc_mjpeg2bgr(uvc_frame_t *in, uvc_frame_t *out);		// XXX
 uvc_error_t uvc_mjpeg2rgb565(uvc_frame_t *in, uvc_frame_t *out);	// XXX
 uvc_error_t uvc_mjpeg2rgbx(uvc_frame_t *in, uvc_frame_t *out);		// XXX
 uvc_error_t uvc_mjpeg2yuyv(uvc_frame_t *in, uvc_frame_t *out);		// XXX
+uvc_error_t uvc_mjpeg2argb(uvc_frame_t *in, uvc_frame_t *out);
+
 #endif
 
 uvc_error_t uvc_yuyv2rgb565(uvc_frame_t *in, uvc_frame_t *out);		// XXX
@@ -822,6 +871,13 @@ uvc_error_t uvc_yuyv2iyuv420SP(uvc_frame_t *in, uvc_frame_t *out);	// XXX
 uvc_error_t uvc_any2iyuv420SP(uvc_frame_t *in, uvc_frame_t *out);	// XXX
 
 uvc_error_t uvc_any2yuyv(uvc_frame_t *in, uvc_frame_t *out);		// XXX
+
+// Added by Peter_St
+uvc_error_t uvc_uyvy2rgbx_new(unsigned char* data, int data_bytes, int width, int height, uvc_frame_t *out);		// XXX
+uvc_error_t uvc_yuyv2_rgbx(unsigned char* data, int data_bytes, int width, int height, uvc_frame_t *out);		// XXX
+uvc_error_t uvc_uyvy2rgb_new(unsigned char* data, int data_bytes, int width, int height, uvc_frame_t *out);		// XXX
+uvc_error_t uvc_yuyv2rgb_new(unsigned char* data, int data_bytes, int width, int height, uvc_frame_t *out);		// XXX
+uvc_error_t uvc_rgb2rgbx_new(unsigned char* data, int data_bytes, int width, int height, uvc_frame_t *out);		// XXX
 
 uvc_error_t uvc_ensure_frame_size(uvc_frame_t *frame, size_t need_bytes); // XXX
 

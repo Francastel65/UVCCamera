@@ -1,7 +1,10 @@
 #ifndef LIBUVC_CONFIG_H
 #define LIBUVC_CONFIG_H
 
+//#include "libuvc/include/utilbase.h"
+
 #include "utilbase.h"
+//#include <utilbase.h>
 
 #define LIBUVC_VERSION_MAJOR 0
 #define LIBUVC_VERSION_MINOR 0

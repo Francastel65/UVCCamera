@@ -128,35 +128,36 @@ void uvc_print_stream_ctrl(uvc_stream_ctrl_t *ctrl, FILE *stream) {
 	if (stream == NULL)
 		stream = stderr;
 
-	FPRINTF(stream, "bmHint: %04x\n", ctrl->bmHint);
-	FPRINTF(stream, "bFormatIndex: %d\n", ctrl->bFormatIndex);
-	FPRINTF(stream, "bFrameIndex: %d\n", ctrl->bFrameIndex);
-	FPRINTF(stream, "dwFrameInterval: %u\n", ctrl->dwFrameInterval);
-	FPRINTF(stream, "wKeyFrameRate: %d\n", ctrl->wKeyFrameRate);
-	FPRINTF(stream, "wPFrameRate: %d\n", ctrl->wPFrameRate);
-	FPRINTF(stream, "wCompQuality: %d\n", ctrl->wCompQuality);
-	FPRINTF(stream, "wCompWindowSize: %d\n", ctrl->wCompWindowSize);
-	FPRINTF(stream, "wDelay: %d\n", ctrl->wDelay);
-	FPRINTF(stream, "dwMaxVideoFrameSize: %u\n", ctrl->dwMaxVideoFrameSize);
-	FPRINTF(stream, "dwMaxPayloadTransferSize: %u\n", ctrl->dwMaxPayloadTransferSize);
-	FPRINTF(stream, "bInterfaceNumber: %d\n", ctrl->bInterfaceNumber);
+	LOGDEB("bmHint: %04x\n", ctrl->bmHint);
+
+	LOGDEB( "bFormatIndex: %d\n", ctrl->bFormatIndex);
+	LOGDEB( "bFrameIndex: %d\n", ctrl->bFrameIndex);
+	LOGDEB( "dwFrameInterval: %u\n", ctrl->dwFrameInterval);
+	LOGDEB( "wKeyFrameRate: %d\n", ctrl->wKeyFrameRate);
+	LOGDEB( "wPFrameRate: %d\n", ctrl->wPFrameRate);
+	LOGDEB( "wCompQuality: %d\n", ctrl->wCompQuality);
+	LOGDEB( "wCompWindowSize: %d\n", ctrl->wCompWindowSize);
+	LOGDEB( "wDelay: %d\n", ctrl->wDelay);
+	LOGDEB( "dwMaxVideoFrameSize: %u\n", ctrl->dwMaxVideoFrameSize);
+	LOGDEB( "dwMaxPayloadTransferSize: %u\n", ctrl->dwMaxPayloadTransferSize);
+	LOGDEB( "bInterfaceNumber: %d\n", ctrl->bInterfaceNumber);
 //
 	/** add UVC 1.1 parameters */
-	FPRINTF(stream, "dwClockFrequency: %d\n", ctrl->dwClockFrequency);
-	FPRINTF(stream, "bmFramingInfo: %d\n", ctrl->bmFramingInfo);
-	FPRINTF(stream, "bPreferedVersion: %d\n", ctrl->bPreferedVersion);
-	FPRINTF(stream, "bMinVersion: %d\n", ctrl->bMinVersion);
-	FPRINTF(stream, "bMaxVersion: %d\n", ctrl->bMaxVersion);
+	LOGDEB( "dwClockFrequency: %d\n", ctrl->dwClockFrequency);
+	LOGDEB( "bmFramingInfo: %d\n", ctrl->bmFramingInfo);
+	LOGDEB( "bPreferedVersion: %d\n", ctrl->bPreferedVersion);
+	LOGDEB( "bMinVersion: %d\n", ctrl->bMinVersion);
+	LOGDEB( "bMaxVersion: %d\n", ctrl->bMaxVersion);
 	/** add UVC 1.5 parameters */
-	FPRINTF(stream, "bUsage: %d\n", ctrl->bUsage);
-	FPRINTF(stream, "bBitDepthLuma: %d\n", ctrl->bBitDepthLuma);
-	FPRINTF(stream, "bmSettings: %d\n", ctrl->bmSettings);
-	FPRINTF(stream, "bMaxNumberOfRefFramesPlus1: %d\n", ctrl->bMaxNumberOfRefFramesPlus1);
-	FPRINTF(stream, "bmRateControlModes: %d\n", ctrl->bmRateControlModes);
+	LOGDEB( "bUsage: %d\n", ctrl->bUsage);
+	LOGDEB( "bBitDepthLuma: %d\n", ctrl->bBitDepthLuma);
+	LOGDEB( "bmSettings: %d\n", ctrl->bmSettings);
+	LOGDEB( "bMaxNumberOfRefFramesPlus1: %d\n", ctrl->bMaxNumberOfRefFramesPlus1);
+	LOGDEB( "bmRateControlModes: %d\n", ctrl->bmRateControlModes);
 #if !defined(__LP64__)
-	FPRINTF(stream, "bmLayoutPerStream: %llx\n", ctrl->bmLayoutPerStream);
+	LOGDEB( "bmLayoutPerStream: %llx\n", ctrl->bmLayoutPerStream);
 #else
-	FPRINTF(stream, "bmLayoutPerStream: %lx\n", ctrl->bmLayoutPerStream);
+	LOGDEB( "bmLayoutPerStream: %lx\n", ctrl->bmLayoutPerStream);
 #endif
 }
 
@@ -172,17 +173,17 @@ static const char *_uvc_name_for_desc_type(const uint8_t type) {
 		return "Interface Descriptor(0x04)";
 	case LIBUSB_DT_ENDPOINT:					// 0x05,
 		return "Endpoint Descriptor(0x05)";
-	case LIBUSB_DT_DEVICE_QUALIFIER:			// 0x06,	// deprecated on USB3.0
+	case 0x06:									// 0x06,	// deprecated on USB3.0
 		return "Qualifier Descriptor(0x06)";
-	case LIBUSB_DT_OTHER_SPEED_CONFIGURATION:	// 0x07,	// deprecated on USB3.0
+	case 0x07:									// 0x07,	// deprecated on USB3.0
 		return "Other speed Config Descriptor(0x07)";
-	case LIBUSB_DT_INTERFACE_POWER:				// 0x08,
+	case 0x08:									// 0x08,
 		return "Power interface Descriptor(0x08)";
-	case LIBUSB_DT_OTG:							// 0x09,
+	case 0x09:									// 0x09,
 		return "OTG Interface Descriptor(0x09)";
-	case LIBUSB_DT_DEBUG:						// 0x0a,
+	case 0x0a:									// 0x0a,
 		return "Debug Descriptor(0x0a)";
-	case LIBUSB_DT_ASSOCIATION:					// 0x0b,
+	case 0x0b:									// 0x0b,
 		return "Association Descriptor(0x0b)";
 	case LIBUSB_DT_BOS:							// 0x0f,
 		return "BOS Descriptor(0x0f)";
@@ -191,13 +192,13 @@ static const char *_uvc_name_for_desc_type(const uint8_t type) {
 // Class specified descriptors
 	case LIBUSB_DT_HID:							// 0x21,
 		return "CS:HID Descriptor(0x21)";
-	case LIBUSB_DT_HID_REPORT:					// 0x22,
+	case LIBUSB_DT_REPORT:						// 0x22,
 		return "CS:HID Report Descriptor(0x22)";
-	case LIBUSB_DT_HID_PHYSICAL: 				// 0x23,
+	case LIBUSB_DT_PHYSICAL: 					// 0x23,
 		return "CS:HID Pysical Descriptor(0x23)";
-	case LIBUSB_DT_CS_INTERFACE:				// 0x24,
+	case 0x24:									// 0x24,
 		return "CS:Interface Descriptor(0x24)";
-	case LIBUSB_DT_CS_ENDPOINT:					// 0x25,
+	case 0x25:									// 0x25,
 		return "CS:Endpoint Descriptor(0x25)";
 	case LIBUSB_DT_HUB: 						// 0x29,
 		return "CS:Hub Descriptor(0x29)";
