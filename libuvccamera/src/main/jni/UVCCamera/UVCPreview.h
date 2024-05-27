@@ -70,6 +70,7 @@ private:
 	ObjectArray<uvc_frame_t *> previewFrames;
 	int previewFormat;
 	size_t previewBytes;
+	custom_camera_values_t* values;
 //
 	volatile bool mIsCapturing;
 	ANativeWindow *mCaptureWindow;
